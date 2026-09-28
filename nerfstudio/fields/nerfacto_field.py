@@ -16,6 +16,7 @@
 Field for compound nerf model, adds scene contraction and image embeddings to instant ngp
 """
 
+import os
 from typing import Dict, Literal, Optional, Tuple
 
 import torch
@@ -308,3 +309,8 @@ class NerfactoField(Field):
         outputs.update({FieldHeadNames.RGB: rgb})
 
         return outputs
+
+
+if os.environ.get("NERFSTUDIO_OPT_1", "1") != "0":
+    NerfactoField.get_density = torch.compile(NerfactoField.get_density)
+    NerfactoField.get_outputs = torch.compile(NerfactoField.get_outputs)

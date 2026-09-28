@@ -1,3 +1,60 @@
+<div align="center">
+  <a href="https://autooptm.com"><img src=".autooptm/logo.png" width="96" alt="AutoOptm"></a>
+
+  <h1>nerfstudio · optimized by <a href="https://autooptm.com">AutoOptm</a></h1>
+
+  <p><b>2.48x faster end to end</b> on the command below, output verified against the stock program.</p>
+
+  <p>
+    <a href="https://autooptm.com"><img alt="speedup" src="https://img.shields.io/badge/end--to--end-2.48x-2ea44f"></a>
+    <a href="https://github.com/nerfstudio-project/nerfstudio/commit/50e0e3c70c775e89333256213363badbf074f29d"><img alt="base" src="https://img.shields.io/badge/upstream-50e0e3c70c77-blue"></a>
+    <img alt="card" src="https://img.shields.io/badge/measured%20on-RTX%205090-lightgrey">
+  </p>
+</div>
+
+> This is a fork of [nerfstudio-project/nerfstudio](https://github.com/nerfstudio-project/nerfstudio) at commit
+> [`50e0e3c70c77`](https://github.com/nerfstudio-project/nerfstudio/commit/50e0e3c70c775e89333256213363badbf074f29d) with the AutoOptm patch applied on top.
+> The optimisation was found, measured and verified automatically by [AutoOptm](https://autooptm.com);
+> the patch is also kept at [`.autooptm/autooptm.patch`](.autooptm/autooptm.patch).
+
+## The result
+
+| | |
+|---|---|
+| **Command** | `ns-train nerfacto --data data/blender/lego` |
+| **Entry point** | `nerfstudio/scripts/train.py` (the `ns-train` command) |
+| **Unit measured** | one nerfacto training iteration: a 4096-ray batch → proposal sampling → field forward → losses → backward → optimizer step; 400 timed steps in one process (iterations bounded with `--max-num-iterations`, viewer set to quit when training ends) |
+| **Before (stock)** | 98.8 ms per step |
+| **After (this tree, all switches default ON)** | 39.8 ms per step (a one-time warm-up of ~35 s over the first 32 steps, 3.5 s for stock, is not included) |
+| **Speedup** | **2.48x** end to end on RTX 5090, noise floor of the host 3.2% |
+| **Output** | training loss (the rendered pixels' error) within 0.011% of the stock program's per step -- about 0.0005 dB of rendered PSNR -- and within 0.002% on held-out batches the optimiser never saw; first-step gradients within 1.3% relative L2 |
+
+### What changed
+
+| File | Where | Gain (alone) |
+|---|---|---|
+| `nerfstudio/fields/nerfacto_field.py` | NerfactoField.get_density() / get_outputs() | 1.989x, together with the row below |
+| `nerfstudio/fields/density_fields.py` | HashMLPDensityField.get_density() | (included above) |
+
+## Reproduce
+
+```bash
+git clone https://github.com/autooptm/nerfstudio-ao.git
+cd nerfstudio-ao
+# install as upstream documents; the Blender lego capture in data/blender/lego (ns-download-data blender --save-dir data/),
+# with a transforms.json beside it built from its transforms_train.json, since the command uses the default dataparser; then:
+ns-train nerfacto --data data/blender/lego
+```
+
+The diff against upstream is one commit: `git log -1 -p` shows it, and
+`git diff 50e0e3c70c77` is the same patch as `.autooptm/autooptm.patch`.
+
+---
+
+<div align="center"><sub>Optimized by <a href="https://autooptm.com">AutoOptm</a> — point it at a repository, get back a verified speedup and the patch.</sub></div>
+
+---
+
 <p align="center">
     <!-- community badges -->
     <a href="https://discord.gg/uMbNqcraFc"><img src="https://dcbadge.vercel.app/api/server/uMbNqcraFc?style=plastic"/></a>

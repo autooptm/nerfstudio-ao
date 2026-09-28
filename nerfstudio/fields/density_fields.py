@@ -16,6 +16,7 @@
 Proposal network field.
 """
 
+import os
 from typing import Literal, Optional, Tuple
 
 import torch
@@ -118,3 +119,7 @@ class HashMLPDensityField(Field):
 
     def get_outputs(self, ray_samples: RaySamples, density_embedding: Optional[Tensor] = None) -> dict:
         return {}
+
+
+if os.environ.get("NERFSTUDIO_OPT_1", "1") != "0":
+    HashMLPDensityField.get_density = torch.compile(HashMLPDensityField.get_density)

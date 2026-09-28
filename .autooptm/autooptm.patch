@@ -1,0 +1,41 @@
+diff --git a/nerfstudio/fields/density_fields.py b/nerfstudio/fields/density_fields.py
+index e8eba7b..e696c00 100644
+--- a/nerfstudio/fields/density_fields.py
++++ b/nerfstudio/fields/density_fields.py
+@@ -16,6 +16,7 @@
+ Proposal network field.
+ """
+ 
++import os
+ from typing import Literal, Optional, Tuple
+ 
+ import torch
+@@ -118,3 +119,7 @@ class HashMLPDensityField(Field):
+ 
+     def get_outputs(self, ray_samples: RaySamples, density_embedding: Optional[Tensor] = None) -> dict:
+         return {}
++
++
++if os.environ.get("NERFSTUDIO_OPT_1", "1") != "0":
++    HashMLPDensityField.get_density = torch.compile(HashMLPDensityField.get_density)
+diff --git a/nerfstudio/fields/nerfacto_field.py b/nerfstudio/fields/nerfacto_field.py
+index 5cf8b57..8cc3d63 100644
+--- a/nerfstudio/fields/nerfacto_field.py
++++ b/nerfstudio/fields/nerfacto_field.py
+@@ -16,6 +16,7 @@
+ Field for compound nerf model, adds scene contraction and image embeddings to instant ngp
+ """
+ 
++import os
+ from typing import Dict, Literal, Optional, Tuple
+ 
+ import torch
+@@ -308,3 +309,8 @@ class NerfactoField(Field):
+         outputs.update({FieldHeadNames.RGB: rgb})
+ 
+         return outputs
++
++
++if os.environ.get("NERFSTUDIO_OPT_1", "1") != "0":
++    NerfactoField.get_density = torch.compile(NerfactoField.get_density)
++    NerfactoField.get_outputs = torch.compile(NerfactoField.get_outputs)
